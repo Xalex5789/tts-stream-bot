@@ -122,23 +122,30 @@ def generate_tts_url():
         text = request.args.get('text', '')
         
         if not text:
-            return "❌ Falta el texto", 400
+            return "Falta texto", 400
         
         if voice not in VOICES:
-            return f"❌ Voz no válida. Usa: {', '.join(VOICES.keys())}", 400
+            return f"Voz invalida", 400
         
         # Limitar longitud
         if len(text) > 200:
             text = text[:200]
         
-        # Generar URL del audio
-        audio_url = f"{request.url_root}tts?voice={voice}&text={text}"
+        # Generar el audio en segundo plano (no esperar)
+        file_hash = hashlib.md5(f"{voice}_{text}".encode()).hexdigest()
+        audio_file = f'audio_cache/{file_hash}.mp3'
         
-        # Devolver solo texto simple para Botrix
-        return f"✅ TTS: {text[:50]}... | {audio_url}"
+        # Si no existe, generar
+        if not os.path.exists(audio_file):
+            voice_config = VOICES[voice]
+            tts = gTTS(text=text, lang=voice_config['lang'], tld=voice_config['tld'])
+            tts.save(audio_file)
+        
+        # Devolver SOLO texto corto
+        return f"TTS OK"
     
     except Exception as e:
-        return f"❌ Error: {str(e)}", 500
+        return f"Error", 500
 
 @app.route('/test', methods=['GET'])
 def test():
