@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTS Overlay - Widget Mode</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: transparent;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Visualización del audio */
+        #audioVisualizer {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 300px;
+            display: none;
+        }
+
+        .visualizer-circle {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 3px solid #00ff88;
+            opacity: 0;
+            animation: ripple 2s ease-out infinite;
+        }
+
+        .visualizer-circle:nth-child(2) {
+            animation-delay: 0.5s;
+        }
+
+        .visualizer-circle:nth-child(3) {
+            animation-delay: 1s;
+        }
+
+        @keyframes ripple {
+            0% {
+                transform: scale(0.5);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        /* Texto en pantalla */
+        #textDisplay {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(20,20,20,0.9));
+            padding: 20px 40px;
+            border-radius: 15px;
+            border: 2px solid #00ff88;
+            color: white;
+            font-size: 24px;
+            text-align: center;
+            max-width: 80%;
+            box-shadow: 0 10px 40px rgba(0,255,136,0.3);
+            display: none;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateX(-50%) translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Indicador de cola */
+        #queueIndicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px 15px;
+            border-radius: 8px;
+            color: #00ff88;
+            font-size: 14px;
+            display: none;
+        }
+
+        /* Status debug (oculto por defecto) */
+        #debugStatus {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.8);
+            color: #0f0;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            display: none; /* Cambiar a 'block' para debugging */
+        }
+    </style>
+</head>
+<body>
+    <!-- Visualizador de audio -->
+    <div id="audioVisualizer">
+        <div class="visualizer-circle"></div>
+        <div class="visualizer-circle"></div>
+        <div class="visualizer-circle"></div>
+    </div>
+
+    <!-- Texto que se está reproduciendo -->
+    <div id="textDisplay"></div>
+
+    <!-- Indicador de cola -->
+    <div id="queueIndicator">En cola: <span id="queueCount">0</span></div>
+
+    <!-- Debug status -->
+    <div id="debugStatus">Inicializando...</div>
+
+    <script>
+        // ==========================================
+        // CONFIGURACIÓN - MODIFICA ESTAS VARIABLES
+        // ==========================================
+        
+        const CONFIG = {
+            API_URL: 'https://tts-stream-bot-production.up.railway.app',
+            SHOW_TEXT: true,           // Mostrar el texto en pantalla
+            SHOW_VISUALIZER: true,     // Mostrar animación visual
+            SHOW_QUEUE: true,          // Mostrar indicador de cola
+            TEXT_DURATION: 0,          // 0 = mostrar mientras reproduce, >0 = segundos fijos
+            MAX_QUEUE_SIZE: 10,        // Máximo de mensajes en cola
+            DEBUG_MODE: false          // Modo debug (mostrar logs)
+        };
+
+        // ==========================================
+        // SISTEMA DE REPRODUCCIÓN
+        // ==========================================
+        
+        class TTSPlayer {
+            constructor() {
+                this.isPlaying = false;
+                this.queue = [];
+                this.currentAudio = null;
+                this.elements = {
+                    visualizer: document.getElementById('audioVisualizer'),
+                    text: document.getElementById('textDisplay'),
+                    queue: document.getElementById('queueIndicator'),
+                    queueCount: document.getElementById('queueCount'),
+                    debug: document.getElementById('debugStatus')
+                };
+            }
+
+            log(message) {
+                if (CONFIG.DEBUG_MODE) {
+                    console.log(`[TTS] ${message}`);
+                    this.elements.debug.textContent = message;
+                }
+            }
+
+            async play(voice, text) {
+                // Agregar a la cola
+                if (this.isPlaying) {
+                    if (this.queue.length < CONFIG.MAX_QUEUE_SIZE) {
+                        this.queue.push({ voice, text });
+                        this.updateQueueDisplay();
+                        this.log(`Cola: ${this.queue.length} mensajes`);
+                    }
+                    return;
+                }
+
+                try {
+                    this.isPlaying = true;
+                    this.log(`Reproduciendo: ${text.substring(0, 30)}...`);
+
+                    // Mostrar visuales
+                    if (CONFIG.SHOW_VISUALIZER) {
+                        this.elements.visualizer.style.display = 'block';
+                    }
+
+                    if (CONFIG.SHOW_TEXT) {
+                        this.elements.text.textContent = text;
+                        this.elements.text.style.display = 'block';
+                    }
+
+                    // Crear URL del audio
+                    const audioUrl = `${CONFIG.API_URL}/tts?voice=${encodeURIComponent(voice)}&text=${encodeURIComponent(text)}`;
+                    
+                    // Crear y reproducir audio
+                    this.currentAudio = new Audio(audioUrl);
+                    this.currentAudio.volume = 1.0;
+
+                    // Eventos del audio
+                    this.currentAudio.onended = () => this.onAudioEnded();
+                    this.currentAudio.onerror = (e) => this.onAudioError(e);
+
+                    // Reproducir
+                    await this.currentAudio.play();
+
+                    // Si hay duración fija de texto, ocultarlo después
+                    if (CONFIG.TEXT_DURATION > 0) {
+                        setTimeout(() => {
+                            this.elements.text.style.display = 'none';
+                        }, CONFIG.TEXT_DURATION * 1000);
+                    }
+
+                } catch (error) {
+                    this.log(`Error: ${error.message}`);
+                    this.onAudioError(error);
+                }
+            }
+
+            onAudioEnded() {
+                this.log('Audio terminado');
+                this.cleanup();
+                this.playNext();
+            }
+
+            onAudioError(error) {
+                this.log(`Error de audio: ${error}`);
+                this.cleanup();
+                this.playNext();
+            }
+
+            cleanup() {
+                this.isPlaying = false;
+                this.currentAudio = null;
+                this.elements.visualizer.style.display = 'none';
+                this.elements.text.style.display = 'none';
+            }
+
+            playNext() {
+                if (this.queue.length > 0) {
+                    const next = this.queue.shift();
+                    this.updateQueueDisplay();
+                    setTimeout(() => this.play(next.voice, next.text), 500);
+                }
+            }
+
+            updateQueueDisplay() {
+                if (CONFIG.SHOW_QUEUE) {
+                    this.elements.queueCount.textContent = this.queue.length;
+                    this.elements.queue.style.display = this.queue.length > 0 ? 'block' : 'none';
+                }
+            }
+        }
+
+        // Instancia global del reproductor
+        const player = new TTSPlayer();
+
+        // ==========================================
+        // INTEGRACIÓN CON BOTS DE CHAT
+        // ==========================================
+
+        // OPCIÓN 1: PostMessage (Desde custom browser source)
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'TTS_COMMAND') {
+                const { voice, text } = event.data;
+                if (voice && text) {
+                    player.play(voice, text);
+                }
+            }
+        });
+
+        // OPCIÓN 2: URL Parameters (OBS Browser Source con parámetros dinámicos)
+        function checkUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            const voice = params.get('voice');
+            const text = params.get('text');
+            
+            if (voice && text) {
+                player.play(voice, text);
+                // Limpiar URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+
+        // OPCIÓN 3: API Global para testing
+        window.playTTS = function(voice, text) {
+            player.play(voice, text);
+        };
+
+        window.testVoices = function() {
+            const tests = [
+                { voice: 'voz1', text: 'Hola, esta es la voz mexicana' },
+                { voice: 'voz2', text: 'Hola, esta es la voz española' },
+                { voice: 'voz3', text: 'Hola, esta es la voz argentina' },
+                { voice: 'voz4', text: 'Hello, this is the English voice' }
+            ];
+            
+            tests.forEach((test, index) => {
+                setTimeout(() => player.play(test.voice, test.text), index * 5000);
+            });
+        };
+
+        // ==========================================
+        // INICIALIZACIÓN
+        // ==========================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            player.log('✅ TTS Overlay iniciado correctamente');
+            
+            // Mostrar debug si está activado
+            if (CONFIG.DEBUG_MODE) {
+                player.elements.debug.style.display = 'block';
+            }
+
+            // Verificar URL params al inicio
+            checkUrlParams();
+
+            console.log('🎙️ TTS Overlay listo');
+            console.log('💡 Para probar: playTTS("voz1", "Hola mundo")');
+            console.log('💡 Para probar todas las voces: testVoices()');
+        });
+
+        // Verificar URL params periódicamente (útil si OBS recarga)
+        setInterval(checkUrlParams, 2000);
+
+    </script>
+</body>
+</html>
