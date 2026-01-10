@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 from gtts import gTTS
 import os
@@ -37,13 +37,42 @@ def home():
     <h3>🎮 Para Botrix:</h3>
     <p><code>$(urlfetch {request.url_root}tts?voice=$(1)&text=$(2-))</code></p>
     
+    <h3>🎬 Para OBS:</h3>
+    <p><code>{request.url_root}tts-overlay-widget.html</code></p>
+    
     <h3>✅ Ejemplos:</h3>
     <ul>
         <li><a href="/tts?voice=voz1&text=Hola a todos">Probar voz1</a></li>
         <li><a href="/tts?voice=voz2&text=Bienvenidos al stream">Probar voz2</a></li>
+        <li><a href="/tts-overlay-widget.html">Ver Overlay para OBS</a></li>
         <li><a href="/test">Ver estado del servidor</a></li>
     </ul>
     """
+
+@app.route('/tts-overlay-widget.html')
+def overlay_widget():
+    """Servir el overlay HTML para OBS"""
+    try:
+        return send_from_directory('.', 'tts-overlay-widget.html')
+    except FileNotFoundError:
+        return """
+        <h1>❌ Archivo no encontrado</h1>
+        <p>El archivo tts-overlay-widget.html no está en el servidor.</p>
+        <p>Asegúrate de que esté en la raíz del proyecto en GitHub.</p>
+        <p><a href="/">Volver al inicio</a></p>
+        """, 404
+
+@app.route('/tts-overlay.html')
+def overlay_basic():
+    """Servir el overlay básico HTML para OBS"""
+    try:
+        return send_from_directory('.', 'tts-overlay.html')
+    except FileNotFoundError:
+        return """
+        <h1>❌ Archivo no encontrado</h1>
+        <p>El archivo tts-overlay.html no está en el servidor.</p>
+        <p><a href="/">Volver al inicio</a></p>
+        """, 404
 
 @app.route('/tts', methods=['GET'])
 def generate_tts():
