@@ -114,6 +114,32 @@ def list_voices():
     """Listar todas las voces disponibles"""
     return jsonify(VOICES)
 
+@app.route('/tts-url', methods=['GET'])
+def generate_tts_url():
+    """Endpoint que devuelve URL del audio (para Botrix)"""
+    try:
+        voice = request.args.get('voice', 'voz1')
+        text = request.args.get('text', '')
+        
+        if not text:
+            return "❌ Falta el texto", 400
+        
+        if voice not in VOICES:
+            return f"❌ Voz no válida. Usa: {', '.join(VOICES.keys())}", 400
+        
+        # Limitar longitud
+        if len(text) > 200:
+            text = text[:200]
+        
+        # Generar URL del audio
+        audio_url = f"{request.url_root}tts?voice={voice}&text={text}"
+        
+        # Devolver solo texto simple para Botrix
+        return f"✅ TTS: {text[:50]}... | {audio_url}"
+    
+    except Exception as e:
+        return f"❌ Error: {str(e)}", 500
+
 @app.route('/test', methods=['GET'])
 def test():
     """Endpoint de prueba"""
