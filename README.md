@@ -1,195 +1,144 @@
-# 🎙️ TTS Botrix Stream con Coqui AI
+# 🎙️ TTS API para Botrix - Con gTTS
 
-Sistema de Text-to-Speech (TTS) con voces IA realistas usando Coqui TTS v0.22.0 para streaming con Botrix.
+Sistema de Text-to-Speech simple y efectivo usando Google TTS (gTTS) para streaming.
 
-## 🚀 Voces Disponibles
+## 🚀 Características
 
-- `voz1` - Voz Española Femenina (Natural, modelo CSS10)
-- `voz2` - Voz Inglesa Femenina (Tacotron2)
-- `voz3` - Voz Inglesa Natural (Glow-TTS)
+- ✅ **5 voces diferentes** (español e inglés)
+- ⚡ **Sistema de caché** para respuestas rápidas
+- 🌐 **API REST** compatible con Botrix
+- 🆓 **100% Gratis** - usa Google TTS
+- 🔄 **Auto-limpieza** de archivos antiguos
 
-## ✨ Características
+## 🎤 Voces Disponibles
 
-- 🎯 Voces IA ultra-realistas con Coqui TTS
-- 🚀 Sistema de caché para respuestas rápidas
-- 🌐 API REST simple para Botrix
-- 🔄 Soporte para múltiples modelos
-- 🎚️ Calidad de audio profesional
+- `voz1` - Voz Mexicana (es-MX)
+- `voz2` - Voz Española (es-ES)
+- `voz3` - Voz Argentina (es-AR)
+- `voz4` - Voz Inglesa USA (en-US)
+- `voz5` - Voz Inglesa UK (en-GB)
 
-## 📦 Instalación Local
+## 📦 Deploy en Railway
+
+### Paso 1: Preparar el repositorio
+
+1. Asegúrate de tener estos archivos:
+   - ✅ `main.py`
+   - ✅ `requirements.txt`
+   - ✅ `runtime.txt`
+   - ✅ `Procfile` ⬅️ **IMPORTANTE**
+   - ✅ `.gitignore`
+
+### Paso 2: Subir a GitHub
 
 ```bash
-# Clonar repositorio
-git clone https://github.com/TU-USUARIO/tts-botrix-stream.git
-cd tts-botrix-stream
-
-# Instalar dependencias
-pip install -r requirements.txt
-
-# Iniciar servidor
-python main.py
+git add .
+git commit -m "Agregar Procfile para Railway"
+git push
 ```
 
-**Nota:** La primera vez descargará los modelos de Coqui (~100-500MB por modelo).
+### Paso 3: Deploy en Railway
 
-## 🌐 Despliegue en Railway
+1. Ve a https://railway.app
+2. Click "New Project" → "Deploy from GitHub repo"
+3. Selecciona tu repositorio
+4. Espera 2-3 minutos
+5. ¡Listo! Copia tu URL
 
-### Opción 1: Desde GitHub (Recomendada)
+## 🎮 Configurar en Botrix
 
-1. Ve a https://railway.app y crea una cuenta
-2. Click en "New Project" → "Deploy from GitHub repo"
-3. Selecciona tu repositorio `tts-botrix-stream`
-4. Railway detectará automáticamente el Procfile
-5. Espera 5-10 minutos (descarga de modelos)
-6. Obtén tu URL pública
-
-### Opción 2: Render.com
-
-1. Ve a https://render.com
-2. "New" → "Web Service"
-3. Conecta tu repositorio
-4. Build Command: `pip install -r requirements.txt`
-5. Start Command: `gunicorn main:app`
-
-**⚠️ Importante:** Los modelos de Coqui ocupan espacio. Asegúrate de tener suficiente almacenamiento en tu plan gratuito.
-
-## 🎮 Configuración en Botrix
-
-### Comando básico:
-
+### Comando Universal
 ```
 !addcom !tts $(urlfetch https://TU-URL.railway.app/tts?voice=$(1)&text=$(2-))
 ```
 
-### Comandos específicos por voz:
-
+### Comandos por Voz
 ```
 !addcom !tts1 $(urlfetch https://TU-URL.railway.app/tts?voice=voz1&text=$(1-))
 !addcom !tts2 $(urlfetch https://TU-URL.railway.app/tts?voice=voz2&text=$(1-))
 !addcom !tts3 $(urlfetch https://TU-URL.railway.app/tts?voice=voz3&text=$(1-))
 ```
 
-### Uso en stream:
-
+### Uso en Stream
 ```
-!tts voz1 Hola a todos en el stream
-!tts1 Este mensaje usa la voz española
-!tts2 This message uses the English voice
-```
-
-## 🛠️ API Endpoints
-
-### Generar TTS
-```
-GET /tts?voice=voz1&text=Hola mundo
+!tts voz1 Hola a todos
+!tts1 Mensaje en voz mexicana
+!tts2 Mensaje en voz española
 ```
 
-### Listar voces
+## 🧪 Probar tu API
+
+### Ver página principal
 ```
-GET /voices
+https://TU-URL.railway.app/
 ```
 
-### Ver modelos disponibles
+### Generar audio
 ```
-GET /models
-```
-
-### Estado del servicio
-```
-GET /test
+https://TU-URL.railway.app/tts?voice=voz1&text=Hola mundo
 ```
 
-## 📝 Ejemplos de Uso
-
-### En navegador:
+### Ver estado
 ```
-https://TU-URL.railway.app/tts?voice=voz1&text=Hola desde Coqui TTS
+https://TU-URL.railway.app/test
 ```
 
-### Con curl:
+## 📡 Endpoints
+
+| Endpoint | Método | Descripción |
+|----------|--------|-------------|
+| `/` | GET | Página de información |
+| `/tts?voice=X&text=Y` | GET | Generar TTS |
+| `/voices` | GET | Lista de voces |
+| `/test` | GET | Estado del servidor |
+
+## 🛠️ Instalación Local
+
 ```bash
-curl "https://TU-URL.railway.app/tts?voice=voz1&text=Prueba de audio" --output audio.wav
+# Clonar
+git clone https://github.com/TU-USUARIO/tts-stream-bot.git
+cd tts-stream-bot
+
+# Instalar dependencias
+pip install -r requirements.txt
+
+# Ejecutar
+python main.py
 ```
 
-### Con Python:
-```python
-import requests
+Abre http://localhost:5000
 
-response = requests.get(
-    'https://TU-URL.railway.app/tts',
-    params={'voice': 'voz1', 'text': 'Hola mundo'}
-)
+## ⚙️ Requisitos
 
-with open('audio.wav', 'wb') as f:
-    f.write(response.content)
-```
-
-## 🔧 Agregar Más Voces
-
-Edita el diccionario `VOICES` en `main.py`:
-
-```python
-VOICES = {
-    'voz4': {
-        'model': 'tts_models/es/mai/tacotron2-DDC',
-        'name': 'Otra Voz Española',
-        'language': 'es'
-    }
-}
-```
-
-Para ver todos los modelos disponibles:
-```bash
-python -c "from TTS.api import TTS; print('\n'.join(TTS.list_models()))"
-```
-
-## 🎤 Clonar tu Propia Voz (Avanzado)
-
-Para usar tu propia voz:
-
-1. Graba 10-30 minutos de audio limpio
-2. Usa el modelo `tts_models/multilingual/multi-dataset/your_tts`
-3. Proporciona el archivo de referencia de tu voz
-
-Documentación: https://github.com/coqui-ai/TTS
-
-## ⚙️ Requisitos del Sistema
-
-- Python 3.9-3.11
-- 2GB RAM mínimo (4GB recomendado)
-- 1GB espacio libre (para modelos)
-- CPU: Cualquiera (GPU opcional para mayor velocidad)
+- Python 3.10+
+- 512MB RAM mínimo
+- Conexión a internet (para gTTS)
 
 ## 🐛 Solución de Problemas
 
-### Error: "No module named TTS"
-```bash
-pip install TTS==0.22.0
-```
+### Railway no inicia
+- ✅ Verifica que tengas el archivo `Procfile`
+- ✅ Revisa los logs en Railway
+- ✅ Asegúrate de usar Python 3.10+
 
-### Error: "CUDA not available"
-Es normal si no tienes GPU. Coqui funcionará con CPU (más lento pero funcional).
+### El audio no se descarga
+- ✅ Verifica la URL completa
+- ✅ Prueba con `?voice=voz1&text=hola`
+- ✅ Revisa que el texto no esté vacío
 
-### El audio no se genera
-Revisa los logs del servidor y verifica que el modelo se haya descargado correctamente.
-
-### Railway se queda sin memoria
-Usa solo 1-2 modelos en la versión gratuita. Los modelos ocupan mucha RAM.
-
-## 📚 Recursos
-
-- [Coqui TTS GitHub](https://github.com/coqui-ai/TTS)
-- [Documentación Botrix](https://botrix.live/docs/)
-- [Lista de modelos Coqui](https://github.com/coqui-ai/TTS#released-models)
+### Botrix no reproduce
+- ✅ Verifica la sintaxis del comando
+- ✅ Prueba la URL en el navegador primero
+- ✅ Asegúrate de usar `$(urlfetch ...)`
 
 ## 📄 Licencia
 
-MIT License
+MIT License - Úsalo libremente
 
-## 🤝 Contribuciones
+## 🤝 Contribuir
 
-¡Pull requests son bienvenidos! Para cambios mayores, abre un issue primero.
+Pull requests bienvenidos. Para cambios grandes, abre un issue primero.
 
 ---
 
-**Hecho con ❤️ para la comunidad de streaming**
+**Hecho con ❤️ para streamers**
